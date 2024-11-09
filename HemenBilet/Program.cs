@@ -1,4 +1,15 @@
+using Microsoft.Extensions.Options;
+using MongoDB.Driver;
+using HemenBilet.Models;
+
+
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.Configure<MongoDbSettings>(builder.Configuration.GetSection("MongoDbSettings"));
+builder.Services.AddSingleton<IMongoClient, MongoClient>(sp =>
+{
+    var settings = sp.GetRequiredService<IOptions<MongoDbSettings>>().Value;
+    return new MongoClient(settings.ConnectionString);
+});
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
