@@ -4,9 +4,10 @@ using System.Text.Json.Serialization;
 
 namespace HemenBilet.Models
 {
+    // FlightData sınıfı MongoDB'ye uygun şekilde düzenlenmiş.
     public class FlightData
     {
-         [BsonId]
+        [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
         public string Id { get; set; }
 
@@ -26,7 +27,6 @@ namespace HemenBilet.Models
         public string ToAirport { get; set; }
 
         [BsonElement("price")]
-        public decimal Price { get; set; }
-    
+        public double Price { get; set; }
     }
 }

@@ -1,23 +1,20 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
 namespace HemenBilet.Models
 {
+    // ApiResponse sınıfı uçuşları FlightData olarak döndürüyor
+    public class ApiResponse
+    {
+        public List<FlightData>? Flights { get; set; }
+    }
 
-        public class ApiResponse
-        {
-            public List<FlightData> Flights { get; set; }
-        }
+    // API'den gelen verilerin türünü DateTime olarak güncelliyoruz
+    public class Flight
+    {
+        public string FlightId { get; set; }
 
-        public class Flight
-        {
-            public string FlightId { get; set; }
-            public string DepartureTime { get; set; }
-            public string ArrivalTime { get; set; }
-            public decimal Price { get; set; }
-        }
+        // DepartureTime ve ArrivalTime artık DateTime türünde
+        public DateTime DepartureTime { get; set; }
+        public DateTime ArrivalTime { get; set; }
 
-    
+        public decimal Price { get; set; }
+    }
 }
