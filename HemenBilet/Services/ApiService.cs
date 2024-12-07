@@ -1,145 +1,96 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Net.Http;
-using System.Threading.Tasks;
+﻿using HemenBilet.Models;
+using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using Microsoft.AspNetCore.WebUtilities;
 using Newtonsoft.Json;
-using HemenBilet.Data;
-using HemenBilet.Models;
 
 namespace HemenBilet.Services
 {
     public class ApiService
     {
-        private static readonly string apiKey = "51339b2856msh90f7c2da6a88527p18a60djsnb702ca5efe9b";
-        private static readonly string apiHost = "booking-com15.p.rapidapi.com";
-        private static readonly string url = "https://booking-com15.p.rapidapi.com/api/v1/flights/searchFlights";
+        private readonly FlightService _flightService;
 
-        private readonly MongoDbContext _dbContext;
-
-        public ApiService(MongoDbContext dbContext)
+        public ApiService(FlightService flightService)
         {
-            _dbContext = dbContext;
+            _flightService = flightService;
         }
 
         public async Task FetchAndSaveAllFlightData()
         {
             using (HttpClient client = new HttpClient())
             {
-                client.DefaultRequestHeaders.Add("X-RapidAPI-Key", apiKey);
-                client.DefaultRequestHeaders.Add("X-RapidAPI-Host", apiHost);
+                client.DefaultRequestHeaders.Add("X-RapidAPI-Key", "51339b2856msh90f7c2da6a88527p18a60djsnb702ca5efe9b");
+                client.DefaultRequestHeaders.Add("X-RapidAPI-Host", "booking-com15.p.rapidapi.com");
 
-                // Konum çiftlerini BOM ve DEL olarak değiştir
                 var locations = new List<(string from, string to)>
                 {
                     ("BOM.AIRPORT", "DEL.AIRPORT")
                 };
 
-                string nextDay = DateTime.Now.AddDays(1).ToString("yyyy-MM-dd");
-
                 foreach (var loc in locations)
                 {
-
                     var queryParams = new Dictionary<string, string?>
                     {
-                        { "fromId", "BOM.AIRPORT" },
-                        { "toId", "DEL.AIRPORT" },
-                        { "departDate", DateTime.Now.AddDays(1).ToString("yyyy-MM-dd") },
-                        { "pageNo", "1" },
-                        { "adults", "1" },
-                        { "children", "0,17" },
-                        { "sort", "BEST" },
-                        { "cabinClass", "ECONOMY" },
-                        { "currency_code", "AED" }
+                        { "fromId", loc.from },
+                        { "toId", loc.to },
+                        { "departDate", DateTime.Now.AddDays(1).ToString("yyyy-MM-dd") }
                     };
 
+                    var uri = new Uri(QueryHelpers.AddQueryString("https://booking-com15.p.rapidapi.com/api/v1/flights/searchFlights", queryParams));
 
-                    var uri = new Uri(QueryHelpers.AddQueryString(url, queryParams));
-
-                    HttpResponseMessage response = await client.GetAsync(uri);
-
-                    if (response.IsSuccessStatusCode)
+                    try
                     {
-                        string jsonResponse = await response.Content.ReadAsStringAsync();
-                        Console.WriteLine(jsonResponse);  // Yanıtı konsola yazdır
+                        HttpResponseMessage response = await client.GetAsync(uri);
 
-                        try
+                        if (response.IsSuccessStatusCode)
                         {
-                            var flightData = ParseFlightData(jsonResponse, loc);
+                            string jsonResponse = await response.Content.ReadAsStringAsync();
+                            Console.WriteLine("API Yanıtı: " + jsonResponse);
+
+                            var flightData = ParseFlightData(jsonResponse);
 
                             if (flightData != null)
                             {
-                                await SaveFlightDataToMongoDb(flightData);
-                                Console.WriteLine($"Veri MongoDB'ye kaydedildi: {loc.from} - {loc.to}");
-                            }
-                            else
-                            {
-                                Console.WriteLine("Geçerli uçuş verisi bulunamadı, MongoDB'ye kaydedilmedi.");
+                                await _flightService.CreateFlightAsync(flightData);
+                                Console.WriteLine("Veri MongoDB'ye kaydedildi.");
                             }
                         }
-                        catch (Exception ex)
+                        else
                         {
-                            Console.WriteLine($"Veri işleme hatası: {ex.Message}");
+                            Console.WriteLine($"API çağrısı başarısız: {response.StatusCode}");
                         }
                     }
-                    else
+                    catch (Exception ex)
                     {
-                        string errorResponse = await response.Content.ReadAsStringAsync();
-                        Console.WriteLine($"Hata mesajı: {errorResponse}");
-                        Console.WriteLine($"{loc.from} ile {loc.to} arasında veri çekme hatası: {response.StatusCode}");
+                        Console.WriteLine("Hata: " + ex.Message);
                     }
                 }
             }
         }
 
-        private FlightData ParseFlightData(string jsonResponse, (string from, string to) loc)
+        private FlightData ParseFlightData(string jsonResponse)
         {
             var apiResponse = JsonConvert.DeserializeObject<ApiResponse>(jsonResponse);
 
-            if (apiResponse?.Flights == null || apiResponse.Flights.Count == 0)
+            if (apiResponse?.Flights == null || !apiResponse.Flights.Any())
             {
-                Console.WriteLine("Yanıtta uçuş verisi bulunamadı. Yanıt formatını veya parametreleri kontrol edin.");
-                return null;  // Uçuş verisi bulunmadığı durumda null döndür
+                Console.WriteLine("Uçuş verisi bulunamadı.");
+                return null;
             }
 
-            var flight = apiResponse.Flights.FirstOrDefault();
+            var flight = apiResponse.Flights.First(); // İlk uçuşu al
 
-            if (flight == null)
-            {
-                throw new Exception("Uçuş verisi bulunamadı.");
-            }
-
-            // API'den gelen DepartureTime ve ArrivalTime zaten DateTime olduğundan direkt kullanıyoruz
-            var flightData = new FlightData
+            return new FlightData
             {
                 FlightId = flight.FlightId,
-                DepartureTime = flight.DepartureTime,  // Direkt kullanıyoruz
-                ArrivalTime = flight.ArrivalTime,      // Direkt kullanıyoruz
-                FromAirport = loc.from,
-                ToAirport = loc.to,
-                Price = (double)flight.Price  // Fiyatı double'a dönüştürüyoruz
+                Airline = flight.AirlineName,
+                FromAirport = flight.FromAirport,
+                ToAirport = flight.ToAirport,
+                DepartureTime = flight.DepartureTime,
+                ArrivalTime = flight.ArrivalTime,
+                Price = (double)flight.Price // Decimal -> Double dönüşümü
             };
-
-            return flightData;
         }
 
-
-        private async Task SaveFlightDataToMongoDb(FlightData flightData)
-        {
-            Console.WriteLine("SaveFlightDataToMongoDb fonksiyonu çağrıldı.");
-
-            var collection = _dbContext.Flights;
-
-            if (collection == null)
-            {
-                Console.WriteLine("Koleksiyon bulunamadı.");
-                return;
-            }
-
-            await collection.InsertOneAsync(flightData); // Veriyi MongoDB'ye ekler
-
-            Console.WriteLine("Veri MongoDB'ye kaydedildi");
-        }
     }
 }

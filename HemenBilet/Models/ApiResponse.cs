@@ -1,20 +1,19 @@
 namespace HemenBilet.Models
 {
-    // ApiResponse sınıfı uçuşları FlightData olarak döndürüyor
+    // API'den gelen yanıtın uçuş listesini temsil eder
     public class ApiResponse
     {
-        public List<FlightData>? Flights { get; set; }
+        public List<Flight>? Flights { get; set; }
     }
 
-    // API'den gelen verilerin türünü DateTime olarak güncelliyoruz
     public class Flight
     {
-        public string FlightId { get; set; }
-
-        // DepartureTime ve ArrivalTime artık DateTime türünde
-        public DateTime DepartureTime { get; set; }
-        public DateTime ArrivalTime { get; set; }
-
-        public decimal Price { get; set; }
+        public string AirlineName { get; set; } // Firma adı
+        public string FlightId { get; set; } // Uçuş ID'si
+        public DateTime DepartureTime { get; set; } // Kalkış zamanı
+        public DateTime ArrivalTime { get; set; } // Varış zamanı
+        public string FromAirport { get; set; } // Kalkış noktası
+        public string ToAirport { get; set; } // Varış noktası
+        public double Price { get; set; } // Bilet ücreti
     }
 }

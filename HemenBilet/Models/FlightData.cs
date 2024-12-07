@@ -1,10 +1,8 @@
 ﻿using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
-using System.Text.Json.Serialization;
 
 namespace HemenBilet.Models
 {
-    // FlightData sınıfı MongoDB'ye uygun şekilde düzenlenmiş.
     public class FlightData
     {
         [BsonId]
@@ -12,21 +10,24 @@ namespace HemenBilet.Models
         public string Id { get; set; }
 
         [BsonElement("flight_id")]
-        public string FlightId { get; set; }
+        public string FlightId { get; set; } // Uçuş ID'si
 
-        [BsonElement("departure")]
-        public DateTime DepartureTime { get; set; }
-
-        [BsonElement("arrival")]
-        public DateTime ArrivalTime { get; set; }
+        [BsonElement("airline")]
+        public string Airline { get; set; } // Firma adı
 
         [BsonElement("from_airport")]
-        public string FromAirport { get; set; }
+        public string FromAirport { get; set; } // Kalkış noktası
 
         [BsonElement("to_airport")]
-        public string ToAirport { get; set; }
+        public string ToAirport { get; set; } // Varış noktası
+
+        [BsonElement("departure_time")]
+        public DateTime DepartureTime { get; set; } // Kalkış zamanı
+
+        [BsonElement("arrival_time")]
+        public DateTime ArrivalTime { get; set; } // Varış zamanı
 
         [BsonElement("price")]
-        public double Price { get; set; }
+        public double Price { get; set; } // Bilet ücreti
     }
 }
