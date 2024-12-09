@@ -1,0 +1,39 @@
+@model User
+
+@{
+    Layout="_Layout";
+}
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.3/jquery.validate.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validation-unobtrusive/3.2.12/jquery.validate.unobtrusive.min.js"></script>
+}
+
+
+<div style="background-image: url('/img/gonderisiz8jpg.jpg'); background-size: contain; background-position: center; height: 100vh; position: relative;">
+
+    <div style="position: absolute; left: 65%; top: 50px;" >
+        <form method="post">
+            <div asp-validation-summary="All" class="text-danger"></div>
+            <div class="form-group">
+                <label asp-for="@Model.UserName" style="color:rgb(189, 173, 82) ; font-size: large;">Kullanıcı Adı</label>
+                <input asp-for="@Model.UserName" class="form-control" style="width: 350px; color: cadetblue;">
+            </div>
+            <div class="form-group">
+                <label asp-for="@Model.Password" style="color:rgb(189, 173, 82) ; font-size: large;">Şifre</label>
+                <input asp-for="@Model.Password" class="form-control" style="width: 350px; color: cadetblue;">
+            </div>
+            <div class="form-group">
+                <label asp-for="@Model.Email" style="color:rgb(189, 173, 82) ; font-size: large;">Email</label>
+                <input asp-for="@Model.Email" class="form-control" style="width: 350px; color: cadetblue;">
+            </div>
+
+            <div class="form-group">                
+                <label asp-for="@Model.Phone" style="color:rgb(189, 173, 82) ; font-size: large;">Telefon</label>
+                <input asp-for="@Model.Phone" class="form-control" style="width: 350px; color: cadetblue;">
+            </div>
+            
+            <button class="btn btn-secondary mt-3" style=" width:100px ; position: absolute; left: 25%;" type="submit">Kayıt Ol</button>
+        </form>
+    </div>
+</div>
